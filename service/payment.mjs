@@ -17,7 +17,7 @@ export class PaymentService {
 		data.push({
 			replyTo: 'PAYMENT_REQUESTED',
 			corellationId: corellationId,
-			data: { ...body.data, status: 'pending', created_at: new Date().toISOString() },
+			data: body.data,
 			message: 'Request'
 		})
 

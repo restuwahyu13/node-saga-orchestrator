@@ -17,7 +17,7 @@ export class StockService {
 		data.push({
 			replyTo: 'STOCK_REQUESTED',
 			corellationId: corellationId,
-			data: { ...body.data, status: 'pending', created_at: new Date().toISOString() },
+			data: body.data,
 			message: 'Request'
 		})
 
