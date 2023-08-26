@@ -26,19 +26,23 @@ export class PaymentService {
 
 	async Execute(eventCommand, data) {
 		let body = data[data.length - 1]
-		const checkBalance = await this._findOne(body)
+		const checkBalance = await this._checkBalance(body)
 
 		if (eventCommand == 'PAYMENT_REQUESTED') {
 			if (checkBalance) {
 				eventCommand = 'ORCHESTRATOR_REQUESTED'
+				const debitPayment = await this._debitPayment(body)
 
 				body.replyTo = 'PAYMENT_SUCCEED'
 				body.message = 'Success'
+				body.data.debitPayment = debitPayment
 			} else {
 				eventCommand = 'ORCHESTRATOR_REQUESTED'
+				const refundAmount = await this._refundAmount(body)
 
 				body.replyTo = 'PAYMENT_FAILED'
 				body.message = 'Failed'
+				body.data.refundAmount = refundAmount
 			}
 
 			data.push(body)
@@ -47,11 +51,46 @@ export class PaymentService {
 		return { eventCommand, data }
 	}
 
-	async _findOne(body) {
+	async _checkBalance(body) {
 		const isSucceed = process.argv[process.argv.length - 1] == '--rules=success' ? true : false
 
 		const getStock = await db.SelectById('payment', body.data.user_id)
 		if (getStock.balance <= 0) return false
 		return isSucceed
+	}
+
+	async _debitPayment(body) {
+		const getStock = await db.SelectById('stock', body.data.product_id)
+		const getPayment = await db.SelectById('payment', body.data.user_id)
+
+		const totalPayment = getStock.price * body.data.qty
+		const debitPayment = getPayment.balance - totalPayment
+
+		return debitPayment
+	}
+
+	async _refundAmount(body) {
+		let refundAmount = 0
+
+		const [getOrder, getStock, getPayment] = await Promise.all([
+			db.SelectById('order', body.data.product_id),
+			db.SelectById('stock', body.data.product_id),
+			db.SelectById('payment', body.data.user_id)
+		])
+
+		if (getOrder) {
+			const balance = getPayment.balance
+
+			if (balance <= getPayment.balance) {
+				const totalPrice = getStock.price * body.data.qty
+				refundAmount = getPayment.balance + totalPrice
+			}
+
+			refundAmount = balance
+		} else {
+			refundAmount = getPayment.balance
+		}
+
+		return refundAmount
 	}
 }

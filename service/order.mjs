@@ -69,97 +69,37 @@ export class OrderService {
 	async _succeed(body) {
 		if (body.replyTo == 'ORDER_SUCCEED') {
 			await db.Update('order', body.data.product_id, { status: 'succeed' })
-
-			console.log('\n')
-			console.log('OrderService - ORDER_SUCCEED COMMIT')
-			console.log('\n')
 		} else if (body.replyTo == 'STOCK_SUCCEED') {
-			const getStock = await db.SelectById('stock', body.data.product_id)
-			const subtractStock = getStock.qty - body.data.qty
-
-			await db.Update('stock', body.data.product_id, { qty: subtractStock })
-
-			console.log('\n')
-			console.log('OrderService - STOCK_SUCCEED COMMIT')
-			console.log('\n')
+			await db.Update('stock', body.data.product_id, { qty: body.data.subtractStock })
 		} else if (body.replyTo == 'PAYMENT_SUCCEED') {
-			const getStock = await db.SelectById('stock', body.data.product_id)
-			const getPayment = await db.SelectById('payment', body.data.user_id)
-
-			const totalPayment = getStock.price * body.data.qty
-			const debitPayment = getPayment.balance - totalPayment
-
-			await db.Update('payment', body.data.product_id, { balance: debitPayment })
-
-			console.log('\n')
-			console.log('OrderService - PAYMENT_SUCCEED COMMIT')
-			console.log('\n')
+			await db.Update('payment', body.data.user_id, { balance: body.data.debitPayment })
 		}
+
+		this._screen('SUCCEED', 'COMMIT')
 	}
 
 	async _failed(body) {
 		if (body.replyTo == 'ORDER_FAILED') {
 			await db.Update('order', body.data.product_id, { status: 'failed' })
-
-			console.log('\n')
-			console.log('OrderService - ORDER_FAILED ROLLBACK')
-			console.log('\n')
 		} else if (body.replyTo == 'STOCK_FAILED') {
-			let rollbackStock = 0
-
-			const [getOrder, getStock] = await Promise.all([
-				db.SelectById('order', body.data.product_id),
-				db.SelectById('stock', body.data.product_id)
-			])
-
-			if (getOrder) {
-				const qty = getStock.qty
-
-				if (qty <= getStock.qty) {
-					rollbackStock = getStock.qty + body.data.qty
-				}
-
-				rollbackStock = qty
-			} else {
-				rollbackStock = getStock.qty
-			}
-
 			body.replyTo = 'ORDER_FAILED'
-			await db.Update('stock', getStock.id, { qty: rollbackStock })
+			await db.Update('stock', body.data.product_id, { qty: body.data.rollbackStock })
 			this.Reply('ORDER_SAGA', data.concat([body]))
-
-			console.log('\n')
-			console.log('OrderService - STOCK_FAILED ROLLBACK')
-			console.log('\n')
 		} else if (body.replyTo == 'PAYMENT_FAILED') {
-			let refundAmount = 0
-
-			const [getOrder, getStock, getPayment] = await Promise.all([
-				db.SelectById('order', body.data.product_id),
-				db.SelectById('stock', body.data.product_id),
-				db.SelectById('payment', body.data.user_id)
-			])
-
-			if (getOrder) {
-				const balance = getPayment.balance
-
-				if (balance <= getPayment.balance) {
-					const totalPrice = getStock.price * body.data.qty
-					refundAmount = getPayment.balance + totalPrice
-				}
-
-				refundAmount = balance
-			} else {
-				refundAmount = getPayment.balance
-			}
-
 			body.replyTo = 'STOCK_FAILED'
-			await db.Update('payment', body.data.user_id, { balance: refundAmount })
+			await db.Update('payment', body.data.user_id, { balance: body.data.refundAmount })
 			this.Reply('ORDER_SAGA', data.concat([body]))
-
-			console.log('\n')
-			console.log('OrderService - PAYMENT_FAILED ROLLBACK')
-			console.log('\n')
 		}
+
+		this._screen('FAILED', 'ROLLBACK')
+	}
+
+	_screen(status, type) {
+		const datetime = new Date().toISOString()
+
+		console.clear()
+		console.log(`OrderService - ORDER_${status} ${type} - ${new Date().toISOString(datetime)}`)
+		console.log(`OrderService - STOCK_${status} ${type} - ${new Date().toISOString(datetime)}`)
+		console.log(`OrderService - PAYMENT_${status} ${type} - ${new Date().toISOString(datetime)}`)
 	}
 }

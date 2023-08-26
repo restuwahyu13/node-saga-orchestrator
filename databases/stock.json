@@ -1,37 +1,37 @@
 [
-  {
-    "id": 1,
-    "name": "Bimoli",
-    "category": "Minyak",
-    "price": 12000,
-    "qty": 97
-  },
-  {
-    "id": 2,
-    "name": "Pepsodent",
-    "category": "Pasta Gigi",
-    "price": 5000,
-    "qty": 50
-  },
-  {
-    "id": 3,
-    "name": "Ciptadent",
-    "category": "Pasta Gigi",
-    "price": 3000,
-    "qty": 30
-  },
-  {
-    "id": 4,
-    "name": "Give",
-    "category": "Sabun Mandir",
-    "price": 1000,
-    "qty": 1000
-  },
-  {
-    "id": 5,
-    "name": "Fanta",
-    "category": "Minuman",
-    "price": 15000,
-    "qty": 10
-  }
+	{
+		"id": 1,
+		"name": "Bimoli",
+		"category": "Minyak",
+		"price": 12000,
+		"qty": 100
+	},
+	{
+		"id": 2,
+		"name": "Pepsodent",
+		"category": "Pasta Gigi",
+		"price": 5000,
+		"qty": 50
+	},
+	{
+		"id": 3,
+		"name": "Ciptadent",
+		"category": "Pasta Gigi",
+		"price": 3000,
+		"qty": 30
+	},
+	{
+		"id": 4,
+		"name": "Give",
+		"category": "Sabun Mandir",
+		"price": 1000,
+		"qty": 1000
+	},
+	{
+		"id": 5,
+		"name": "Fanta",
+		"category": "Minuman",
+		"price": 15000,
+		"qty": 10
+	}
 ]
