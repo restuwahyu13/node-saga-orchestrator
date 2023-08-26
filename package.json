@@ -1,0 +1,26 @@
+{
+	"name": "node-saga-orchestrator",
+	"version": "1.0.0",
+	"description": "Simulation saga pattern orchestrator pure using JavaScript",
+	"main": "index.js",
+	"scripts": {
+		"start:success": "node index.mjs --rules=success",
+		"start:failed": "node index.mjs --rules=failed"
+	},
+	"author": "Restu Wahyu Saputra",
+	"engines": {
+		"node": ">= 14.x.x",
+		"npm": ">= 6.x.x"
+	},
+	"maintainers": [
+		"Restu Wahyu Saputra"
+	],
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/restuwahyu13/node-saga-orchestrator"
+	},
+	"license": "MIT",
+	"dependencies": {
+		"lowdb": "^6.0.1"
+	}
+}
