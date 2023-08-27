@@ -1,12 +1,3 @@
-# Microservices Saga Pattern (Orchestrator)
-
-
-![](https://blog.mia-platform.eu/hubfs/Mia-Platform_Saga_Pattern.png)
-
-
-## Command
-
-```makefile
 scs-order:
 	npm run start:order:success
 
@@ -24,4 +15,3 @@ scs-payment:
 
 err-payment:
 	npm run start:payment:error
-```

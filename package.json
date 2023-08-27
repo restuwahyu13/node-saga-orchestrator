@@ -4,8 +4,12 @@
 	"description": "Simulation saga pattern orchestrator pure using JavaScript",
 	"main": "index.js",
 	"scripts": {
-		"start:success": "node index.mjs --rules=success",
-		"start:failed": "node index.mjs --rules=failed"
+		"start:order:success": "node index.mjs --rules=order-success",
+		"start:order:error": "node index.mjs --rules=order-failed",
+		"start:stock:success": "node index.mjs --rules=stock-success",
+		"start:stock:error": "node index.mjs --rules=stock-failed",
+		"start:payment:success": "node index.mjs --rules=payment-success",
+		"start:payment:error": "node index.mjs --rules=payment-failed"
 	},
 	"author": "Restu Wahyu Saputra",
 	"engines": {

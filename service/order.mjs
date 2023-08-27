@@ -1,4 +1,5 @@
 import { LowDB } from '../helpers/db.mjs'
+import { delay } from '../helpers/delay.mjs'
 
 let eventCommand = ''
 let corellationId = ''
@@ -30,19 +31,33 @@ export class OrderService {
 	}
 
 	async Execute(eventCommand) {
+		await delay(2000, 'Order Created....')
+
 		let body = data[data.length - 1]
+		const argv = process.argv[process.argv.length - 1]
+		const isSucceed = argv == '--rules=order-success' ? true : argv == '--rules=order-failed' ? false : true
 
 		if (eventCommand == 'ORDER_REQUESTED') {
-			if (body.data.product_id > 0) {
+			if (isSucceed && body.data.product_id > 0) {
 				eventCommand = 'ORCHESTRATOR_REQUESTED'
 
 				body.replyTo = 'ORDER_SUCCEED'
 				body.message = 'Success'
+
+				await delay(3000, 'Order Completed')
+
+				console.log('\n')
+				await delay(1000, `ORDER COMMIT`)
 			} else {
 				eventCommand = 'ORCHESTRATOR_REQUESTED'
 
 				body.replyTo = 'ORDER_FAILED'
 				body.message = 'Failed'
+
+				await delay(3000, 'Order Failed')
+
+				console.log('\n')
+				await delay(1000, `ORDER ROLLBACK`)
 			}
 
 			data.push(body)
@@ -74,8 +89,6 @@ export class OrderService {
 		} else if (body.replyTo == 'PAYMENT_SUCCEED') {
 			await db.Update('payment', body.data.user_id, { balance: body.data.debitPayment })
 		}
-
-		this._screen('SUCCEED', 'COMMIT')
 	}
 
 	async _failed(body) {
@@ -91,15 +104,24 @@ export class OrderService {
 			this.Reply('ORDER_SAGA', data.concat([body]))
 		}
 
-		this._screen('FAILED', 'ROLLBACK')
+		return true
 	}
 
-	_screen(status, type) {
-		const datetime = new Date().toISOString()
+	// _screen(status, acid, type) {
+	// 	const datetime = new Date().toISOString()
 
-		console.clear()
-		console.log(`OrderService - ORDER_${status} ${type} - ${new Date().toISOString(datetime)}`)
-		console.log(`OrderService - STOCK_${status} ${type} - ${new Date().toISOString(datetime)}`)
-		console.log(`OrderService - PAYMENT_${status} ${type} - ${new Date().toISOString(datetime)}`)
-	}
+	// 	switch (type) {
+	// 		case 'order':
+	// 			console.log(`OrderService - ORDER_${status} ${acid} - ${new Date().toISOString(datetime)}`)
+	// 			break
+
+	// 		case 'stock':
+	// 			console.log(`OrderService - STOCK_${status} ${acid} - ${new Date().toISOString(datetime)}`)
+	// 			break
+
+	// 		case 'payment':
+	// 			console.log(`OrderService - PAYMENT_${status} ${acid} - ${new Date().toISOString(datetime)}`)
+	// 			break
+	// 	}
+	// }
 }

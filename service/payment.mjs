@@ -1,4 +1,5 @@
 import { LowDB } from '../helpers/db.mjs'
+import { delay } from '../helpers/delay.mjs'
 
 let eventCommand = ''
 let corellationId = ''
@@ -25,24 +26,44 @@ export class PaymentService {
 	}
 
 	async Execute(eventCommand, data) {
+		console.log('\n')
+		await delay(2000, 'Payment Inquiry....')
+
 		let body = data[data.length - 1]
 		const checkBalance = await this._checkBalance(body)
 
 		if (eventCommand == 'PAYMENT_REQUESTED') {
-			if (checkBalance) {
+			if (eventCommand == 'PAYMENT_SUCCEED' || checkBalance) {
 				eventCommand = 'ORCHESTRATOR_REQUESTED'
-				const debitPayment = await this._debitPayment(body)
 
 				body.replyTo = 'PAYMENT_SUCCEED'
 				body.message = 'Success'
+
+				const debitPayment = await this._debitPayment(body)
 				body.data.debitPayment = debitPayment
-			} else {
+
+				await delay(3000, 'Payment Success')
+
+				console.log('\n')
+				await delay(1000, `PAYMENT COMMIT`)
+			} else if (eventCommand == 'PAYMENT_FAILED' || !checkBalance) {
 				eventCommand = 'ORCHESTRATOR_REQUESTED'
-				const refundAmount = await this._refundAmount(body)
 
 				body.replyTo = 'PAYMENT_FAILED'
 				body.message = 'Failed'
+
+				const rollbackStock = await this._rollbackStock(body)
+				body.data.rollbackStock = rollbackStock
+
+				const refundAmount = await this._refundAmount(body)
 				body.data.refundAmount = refundAmount
+
+				await delay(3000, 'Payment Failed')
+
+				console.log('\n')
+				await delay(1000, `PAYMENT ROLLBACK`)
+				await delay(2000, `STOCK ROLLBACK`)
+				await delay(3000, `ORDER ROLLBACK`)
 			}
 
 			data.push(body)
@@ -52,7 +73,8 @@ export class PaymentService {
 	}
 
 	async _checkBalance(body) {
-		const isSucceed = process.argv[process.argv.length - 1] == '--rules=success' ? true : false
+		const argv = process.argv[process.argv.length - 1]
+		const isSucceed = argv == '--rules=payment-success' ? true : argv == '--rules=payment-failed' ? false : true
 
 		const getStock = await db.SelectById('payment', body.data.user_id)
 		if (getStock.balance <= 0) return false
@@ -92,5 +114,19 @@ export class PaymentService {
 		}
 
 		return refundAmount
+	}
+
+	async _rollbackStock(body) {
+		let rollbackStock = 0
+
+		const [getOrder, getStock] = await Promise.all([db.SelectById('order', body.data.product_id), db.SelectById('stock', body.data.product_id)])
+
+		if (getOrder) {
+			rollbackStock = getStock.qty + body.data.qty
+		} else {
+			rollbackStock = getStock.qty
+		}
+
+		return rollbackStock
 	}
 }
